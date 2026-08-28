@@ -1,0 +1,6 @@
+{
+  "name": "Seshat's Calendar",
+  "description": "A 13-month, 28-day calendar system based on the Seshat framework.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
