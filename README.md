@@ -2,10 +2,10 @@
 
 Welcome to **Seshat's Calendar** – a unique calendar system featuring 13 months of 28 days each, starting April 1st 2030, with intercalaris days.
 
-## Repository
+## Links
 
-For more information, visit the project on GitHub:
-👉 **[MLSpyShop/Seshat-s-Calendar](https://github.com/MLSpyShop/Seshat-s-Calendar)**
+- **GitHub Repository**: [MLSpyShop/Seshat-s-Calendar](https://github.com/MLSpyShop/Seshat-s-Calendar)
+- **GitHub Pages**: [Seshat's Calendar GitHub Pages](https://mlspyshop.github.io/Seshat-s-Calendar/)
 
 ## Overview
 
@@ -24,4 +24,4 @@ Explore the repository to learn more about the calendar system implementation an
 
 ---
 
-For questions or contributions, please visit the [repository page](https://github.com/MLSpyShop/Seshat-s-Calendar).
+For questions or contributions, please visit the [repository page](https://github.com/MLSpyShop/Seshat-s-Calendar) or check out the [project site](https://mlspyshop.github.io/Seshat-s-Calendar/).
