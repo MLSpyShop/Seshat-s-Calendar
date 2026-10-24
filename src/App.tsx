@@ -14,7 +14,9 @@ import { DayInspectorModal } from './components/DayInspectorModal';
 import { PdfExportModal } from './components/PdfExportModal';
 import { SeshatDate } from './types';
 import { SESHAT_METADATA } from './data';
+import { gregorianToSeshat } from './utils/calendarMath';
 import { SystemIntroduction } from './components/SystemIntroduction';
+import { MathematicalClock } from './components/MathematicalClock';
 import {
   ShieldCheck,
   Calendar,
@@ -23,6 +25,7 @@ import {
   BookOpen,
   Milestone,
   Layers,
+  Compass,
 } from 'lucide-react';
 
 export default function App() {
@@ -51,10 +54,11 @@ export default function App() {
 
   const moduleItems: { id: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'calendar', label: '1. 13-Month Calendar', icon: Calendar },
-    { id: 'converter', label: '2. Date Converter', icon: ArrowRightLeft },
-    { id: 'financial', label: '3. Financial Variance', icon: TrendingUp },
-    { id: 'priorArt', label: '4. Prior Art & History', icon: BookOpen },
-    { id: 'roadmap', label: '5. 2030 Epoch Roadmap', icon: Milestone },
+    { id: 'clock', label: '2. Mathematical Clock', icon: Compass },
+    { id: 'converter', label: '3. Date Converter', icon: ArrowRightLeft },
+    { id: 'financial', label: '4. Financial Variance', icon: TrendingUp },
+    { id: 'priorArt', label: '5. Prior Art & History', icon: BookOpen },
+    { id: 'roadmap', label: '6. 2030 Epoch Roadmap', icon: Milestone },
   ];
 
   return (
@@ -92,7 +96,7 @@ export default function App() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 {moduleItems.map((mod) => {
                   const Icon = mod.icon;
                   const isActive = activeTab === mod.id;
@@ -127,6 +131,16 @@ export default function App() {
               onSelectDate={(date) => setSelectedDate(date)}
               selectedDate={selectedDate}
               onOpenPdfModal={(yr) => handleOpenPdf(yr)}
+              onOpenClock={() => handleTabChange('clock')}
+            />
+          )}
+
+          {activeTab === 'clock' && (
+            <MathematicalClock
+              onSelectDate={(gDate) => {
+                const seshat = gregorianToSeshat(gDate);
+                setSelectedDate(seshat);
+              }}
             />
           )}
 
@@ -143,6 +157,10 @@ export default function App() {
         <DayInspectorModal
           selectedDate={selectedDate}
           onClose={() => setSelectedDate(null)}
+          onOpenClock={() => {
+            setSelectedDate(null);
+            handleTabChange('clock');
+          }}
         />
 
         {/* 1,000-Year Perpetual Master PDF Export Modal */}
@@ -153,26 +171,54 @@ export default function App() {
         />
 
         {/* Footer */}
-        <footer className="mt-16 bg-white border-t border-slate-200 text-xs text-slate-500 py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-bold text-slate-900">{SESHAT_METADATA.title}</span>
-                <span>·</span>
-                <span>Architectural Blueprint & Global Standards</span>
+        <footer className="mt-20 bg-white border-t border-slate-200 text-slate-600 py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+            {/* Primary Author & Institutional Attribution */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm sm:text-base">
+                  <span className="font-bold text-slate-900 tracking-tight">
+                    {SESHAT_METADATA.author}
+                  </span>
+                  <span className="text-slate-400">·</span>
+                  <span className="font-medium text-slate-700">
+                    {SESHAT_METADATA.titleAndRole}
+                  </span>
+                  <span className="text-slate-400">·</span>
+                  <a
+                    href={`https://orcid.org/${SESHAT_METADATA.orcid}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-mono text-xs sm:text-sm font-semibold text-emerald-700 hover:text-emerald-800 underline underline-offset-2 transition-colors"
+                  >
+                    ORCID: {SESHAT_METADATA.orcid}
+                  </a>
+                </div>
+                <p className="text-xs text-slate-500">
+                  {SESHAT_METADATA.title} · Strategic OSINT, Architectural Chronometrical Standard & Global Standards Blueprint
+                </p>
               </div>
-              <p className="text-slate-500">
-                Authored by {SESHAT_METADATA.author}, {SESHAT_METADATA.titleAndRole} (ORCID: {SESHAT_METADATA.orcid}).
-              </p>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  Mathematical Consistency Verified
+                </span>
+                <span className="px-3 py-1.5 rounded-full text-xs font-mono font-medium bg-slate-200/80 text-slate-700">
+                  Epoch: April 1, 2030 CE
+                </span>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs">
-              <span className="inline-flex items-center gap-1 text-emerald-700 font-medium">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                Pure Mathematical & Contextual Consistency Verified
-              </span>
-              <span className="text-slate-400">·</span>
-              <span className="font-mono text-slate-600">Epoch: April 1, 2030 CE</span>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400">
+              <p>
+                © 2026 {SESHAT_METADATA.author}. Perpetual 13-Month Chronometry Infrastructure.
+              </p>
+              <div className="flex items-center gap-3">
+                <span>All 13 Months Standardized to 28 Days</span>
+                <span>·</span>
+                <span>Pure Weekday Synchrony</span>
+              </div>
             </div>
           </div>
         </footer>

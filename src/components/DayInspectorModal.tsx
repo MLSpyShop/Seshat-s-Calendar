@@ -1,17 +1,23 @@
-import React, { useEffect } from 'react';
-import { SeshatDate } from '../types';
+import React, { useEffect, useMemo } from 'react';
+import { SeshatDate, AstroEvent } from '../types';
 import { formatGregorianLong, formatGregorianISO } from '../utils/calendarMath';
-import { Calendar, Clock, Globe, Shield, Sparkles, X, Hash, Layers } from 'lucide-react';
+import { Calendar, Clock, Globe, Shield, Sparkles, X, Hash, Layers, Compass, Sun, Moon, ArrowRight } from 'lucide-react';
 import { GoogleEventsSection } from './GoogleEventsSection';
 import { LunarPhaseCard } from './LunarPhaseCard';
 import { getLunarDayInfo } from '../utils/lunarMath';
+import { getAstroEventsForSeshatYear } from '../utils/astronomyMath';
 
 interface DayInspectorModalProps {
   selectedDate: SeshatDate | null;
   onClose: () => void;
+  onOpenClock?: (targetDate: Date) => void;
 }
 
-export const DayInspectorModal: React.FC<DayInspectorModalProps> = ({ selectedDate, onClose }) => {
+export const DayInspectorModal: React.FC<DayInspectorModalProps> = ({
+  selectedDate,
+  onClose,
+  onOpenClock,
+}) => {
   // Close on Escape key and lock body scroll while modal is active
   useEffect(() => {
     if (!selectedDate) return;
@@ -37,6 +43,12 @@ export const DayInspectorModal: React.FC<DayInspectorModalProps> = ({ selectedDa
   const isIntercalary = selectedDate.type !== 'standard';
   const unixTimestamp = Math.floor(selectedDate.gregorianDate.getTime() / 1000);
   const lunarInfo = getLunarDayInfo(selectedDate.gregorianDate, selectedDate.year);
+  const targetIso = formatGregorianISO(selectedDate.gregorianDate);
+  const yearAstroEvents = useMemo(() => getAstroEventsForSeshatYear(selectedDate.year), [selectedDate.year]);
+  const astroEventsToday = useMemo(
+    () => yearAstroEvents.filter((e) => e.isoDate === targetIso),
+    [yearAstroEvents, targetIso]
+  );
 
   return (
     <div
@@ -184,8 +196,103 @@ export const DayInspectorModal: React.FC<DayInspectorModalProps> = ({ selectedDa
             </div>
           )}
 
+          {/* Astrological Alignments & Solar/Lunar Eclipses on this Day */}
+          {astroEventsToday.length > 0 && (
+            <div className="space-y-3">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  Astrological & Astronomical Alignments ({astroEventsToday.length})
+                </span>
+                {onOpenClock && (
+                  <button
+                    onClick={() => onOpenClock(selectedDate.gregorianDate)}
+                    className="text-[11px] text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 underline underline-offset-2"
+                  >
+                    <Compass className="w-3 h-3" />
+                    <span>View On Clock Dial</span>
+                  </button>
+                )}
+              </div>
+
+              {astroEventsToday.map((ev) => {
+                const isSolar = ev.type === 'solar_eclipse';
+                const isLunar = ev.type === 'lunar_eclipse';
+
+                return (
+                  <div
+                    key={ev.id}
+                    className={`p-4 rounded-xl border ${
+                      isSolar
+                        ? 'bg-linear-to-r from-amber-50 to-orange-50/80 border-amber-300'
+                        : isLunar
+                        ? 'bg-linear-to-r from-red-50 to-rose-50/80 border-red-300'
+                        : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{ev.icon}</span>
+                        <div>
+                          <div className="text-sm font-black text-slate-900">
+                            {ev.title}
+                          </div>
+                          {ev.subtitle && (
+                            <div className="text-xs font-semibold text-slate-600">
+                              {ev.subtitle}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700">
+                        {ev.timeStr}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-700 mt-2 leading-relaxed">
+                      {ev.description}
+                    </p>
+
+                    <div className="mt-2.5 pt-2 border-t border-slate-200/60 text-xs text-slate-800">
+                      <strong>Astrological Meaning: </strong>
+                      <span>{ev.astrologicalSignificance}</span>
+                    </div>
+
+                    {ev.astronomicalDetails?.visibilityRegions && (
+                      <div className="mt-1 text-[11px] text-slate-500 italic">
+                        Path of Totality/Visibility: {ev.astronomicalDetails.visibilityRegions}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Astronomical Lunar Phase Card */}
           <LunarPhaseCard lunarInfo={lunarInfo} />
+
+          {/* Launch Mathematical Clock Shortcut */}
+          {onOpenClock && (
+            <div className="bg-linear-to-r from-slate-900 to-indigo-950 text-white p-3.5 rounded-xl border border-indigo-900/60 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center">
+                  <Compass className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-white">Full-Spectrum Astrological Clock</div>
+                  <div className="text-[10px] text-slate-300">Inspect 360° planetary aspects and celestial hands</div>
+                </div>
+              </div>
+              <button
+                onClick={() => onOpenClock(selectedDate.gregorianDate)}
+                className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold text-xs transition-all flex items-center gap-1 shrink-0"
+              >
+                <span>Launch Clock</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          )}
 
           {/* Technical Metadata */}
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono">

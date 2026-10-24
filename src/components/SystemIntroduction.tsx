@@ -65,12 +65,20 @@ export const SystemIntroduction: React.FC<SystemIntroductionProps> = ({
       color: 'text-amber-600 bg-amber-50 border-amber-200',
     },
     {
-      title: 'Astronomical Lunar Tracking',
+      title: 'Astronomical Lunar & Solar Eclipses',
       description:
-        'High-precision Jean Meeus syzygy calculation computes exact UTC New Moons, Full Moons, and continuous illumination percentages for every single day.',
+        'Authoritative NASA/Espenak catalog tracking Total, Annular, Partial, and Hybrid Solar Eclipses, Blood Moons, and continuous lunar syzygies across all centuries.',
       icon: Moon,
-      badge: 'Jean Meeus Algorithms',
+      badge: 'Solar & Lunar Eclipses',
       color: 'text-purple-600 bg-purple-50 border-purple-200',
+    },
+    {
+      title: 'Full-Spectrum Mathematical Clock',
+      description:
+        'Concentric 24h astrolabe dial marrying the 13-month invariant calendar with the 360° tropical zodiac wheel, active planetary aspect rays, and eclipse nodal radar.',
+      icon: Sparkles,
+      badge: 'Astrological Dial',
+      color: 'text-amber-600 bg-amber-50 border-amber-200',
     },
     {
       title: '0% Financial Forecasting Variance',
@@ -129,8 +137,7 @@ export const SystemIntroduction: React.FC<SystemIntroductionProps> = ({
             </h1>
 
             <p className="text-sm sm:text-base text-slate-300 mt-2.5 leading-relaxed">
-              A deterministic civil and astronomical chronometry created by{' '}
-              <strong className="text-white font-semibold">{SESHAT_METADATA.author}</strong>. By
+              A deterministic civil and astronomical chronometry standard. By
               standardizing every year into thirteen 28-day months of exactly four 7-day weeks, the
               system permanently eliminates the mathematical irregularities, shifting weekdays, and
               multi-billion-dollar forecasting distortions of the Gregorian calendar.
@@ -138,18 +145,6 @@ export const SystemIntroduction: React.FC<SystemIntroductionProps> = ({
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col items-start lg:items-end gap-3 shrink-0">
-            <div className="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-2xl text-right sm:text-left lg:text-right">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Author & Specification
-              </div>
-              <div className="text-xs font-bold text-white mt-0.5">
-                {SESHAT_METADATA.titleAndRole}
-              </div>
-              <div className="text-[11px] font-mono text-amber-300 mt-0.5">
-                ORCID: {SESHAT_METADATA.orcid}
-              </div>
-            </div>
-
             <button
               id="toggle-system-intro-btn"
               onClick={() => setIsExpanded((prev) => !prev)}

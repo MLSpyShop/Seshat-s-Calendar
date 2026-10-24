@@ -87,3 +87,79 @@ export interface LunarDayInfo {
   nextNewMoonDays: number;
 }
 
+export type AstroEventType =
+  | 'solar_eclipse'
+  | 'lunar_eclipse'
+  | 'solstice'
+  | 'equinox'
+  | 'zodiac_ingress'
+  | 'planetary_station'
+  | 'planetary_aspect'
+  | 'supermoon';
+
+export type SolarEclipseKind = 'Total' | 'Annular' | 'Partial' | 'Hybrid';
+export type LunarEclipseKind = 'Total' | 'Partial' | 'Penumbral';
+
+export interface AstroEvent {
+  id: string;
+  type: AstroEventType;
+  title: string;
+  subtitle?: string;
+  utcDate: Date;
+  isoDate: string; // YYYY-MM-DD
+  timeStr: string; // e.g. "14:28 UTC"
+  seshatYear: number;
+  seshatFormatted: string;
+  seshatMonthNum?: number;
+  seshatDayNum?: number;
+  isIntercalaris1?: boolean;
+  isIntercalaris2?: boolean;
+  icon: string;
+  badgeColor: string;
+  categoryLabel: string;
+  description: string;
+  astrologicalSignificance: string;
+  astronomicalDetails?: {
+    eclipseKind?: SolarEclipseKind | LunarEclipseKind;
+    sarosSeries?: number;
+    magnitude?: number;
+    duration?: string;
+    visibilityRegions?: string;
+    gamma?: number;
+    zodiacSign?: string;
+    zodiacDegree?: string;
+    eclipticLongitude?: number;
+    planet?: string;
+    stationType?: 'Retrograde Station (Rx)' | 'Direct Station (D)';
+    aspectName?: string;
+    aspectAngle?: number;
+  };
+}
+
+export interface CelestialBodyPosition {
+  id: string;
+  name: string;
+  symbol: string;
+  color: string;
+  eclipticLongitude: number; // 0 to 360 degrees
+  zodiacSign: string;
+  signSymbol: string;
+  degreesInSign: number; // 0 to 30
+  minutesInSign: number; // 0 to 60
+  isRetrograde: boolean;
+  orbitalSpeedDegPerDay?: number;
+  distanceAU?: number;
+}
+
+export interface AspectInfo {
+  planet1: string;
+  planet2: string;
+  aspectName: 'Conjunction' | 'Sextile' | 'Square' | 'Trine' | 'Opposition';
+  angle: number;
+  exactAngle: number;
+  orb: number;
+  color: string;
+  symbol: string;
+  nature: 'Harmonious' | 'Dynamic' | 'Intense';
+}
+

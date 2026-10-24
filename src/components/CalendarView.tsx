@@ -14,7 +14,11 @@ import {
   getLunarEventsForSeshatYear,
   getLunarEventsMapForSeshatYear,
 } from '../utils/lunarMath';
-import { LunarEphemerisPanel } from './LunarEphemerisPanel';
+import {
+  getAstroEventsForSeshatYear,
+  getAstroEventsMapForSeshatYear,
+} from '../utils/astronomyMath';
+import { CosmicEphemerisPanel } from './CosmicEphemerisPanel';
 import {
   ChevronLeft,
   ChevronRight,
@@ -28,18 +32,31 @@ import {
   Moon,
   FileText,
   Download,
+  Compass,
+  ArrowRight,
 } from 'lucide-react';
 
 interface CalendarViewProps {
   onSelectDate: (date: SeshatDate) => void;
   selectedDate: SeshatDate | null;
   onOpenPdfModal?: (year?: number) => void;
+  onOpenClock?: (targetDate?: Date) => void;
 }
+
+export type AstroFilterType =
+  | 'all'
+  | 'solar_eclipse'
+  | 'lunar_eclipse'
+  | 'cardinal'
+  | 'planetary'
+  | 'full_moon'
+  | 'new_moon';
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
   onSelectDate,
   selectedDate,
   onOpenPdfModal,
+  onOpenClock,
 }) => {
   const { user, getEventsForDate } = useAuth();
   // Today's actual date
@@ -48,7 +65,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // Current viewed year (default to Year 0 or current)
   const [viewYear, setViewYear] = useState<number>(0);
   const [quarterFilter, setQuarterFilter] = useState<'all' | 'Q1' | 'Q2' | 'Q3' | 'Q4' | 'intercalaris'>('all');
-  const [moonFilter, setMoonFilter] = useState<'all' | 'full' | 'new'>('all');
+  const [astroFilter, setAstroFilter] = useState<AstroFilterType>('all');
   const [showEphemeris, setShowEphemeris] = useState<boolean>(false);
 
   const isLeap = isSeshatLeapYear(viewYear);
@@ -60,6 +77,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const lunarEventsMap = useMemo(() => getLunarEventsMapForSeshatYear(viewYear), [viewYear]);
   const fullMoonsCount = useMemo(() => lunarEvents.filter((e) => e.type === 'full_moon').length, [lunarEvents]);
   const newMoonsCount = useMemo(() => lunarEvents.filter((e) => e.type === 'new_moon').length, [lunarEvents]);
+
+  // Full-Spectrum Astronomical & Astrological Events
+  const astroEvents = useMemo(() => getAstroEventsForSeshatYear(viewYear), [viewYear]);
+  const astroEventsMap = useMemo(() => getAstroEventsMapForSeshatYear(viewYear), [viewYear]);
+
+  const solarEclipses = useMemo(() => astroEvents.filter((e) => e.type === 'solar_eclipse'), [astroEvents]);
+  const lunarEclipses = useMemo(() => astroEvents.filter((e) => e.type === 'lunar_eclipse'), [astroEvents]);
+  const cardinalEvents = useMemo(() => astroEvents.filter((e) => e.type === 'solstice' || e.type === 'equinox'), [astroEvents]);
+  const planetaryStations = useMemo(() => astroEvents.filter((e) => e.type === 'planetary_station'), [astroEvents]);
 
   // Filter months based on quarter
   const filteredMonths = MONTHS.filter((m) => {
@@ -152,8 +178,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </button>
           </div>
 
-          {/* Quick Jump Buttons & 1,000-Yr PDF Trigger */}
+          {/* Quick Jump Buttons, Mathematical Clock Trigger & 1,000-Yr PDF Trigger */}
           <div className="flex flex-wrap items-center gap-2">
+            {/* Mathematical Astrological Clock Trigger */}
+            {onOpenClock && (
+              <button
+                id="calendar-open-clock-btn"
+                onClick={() => onOpenClock()}
+                className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-black bg-slate-950 hover:bg-indigo-950 active:scale-95 text-amber-400 border border-amber-400/30 flex items-center gap-1.5 shadow-xs transition-all"
+                title="Open Full-Spectrum Mathematical Astrological Clock"
+              >
+                <Compass className="w-4 h-4 text-amber-400" />
+                <span>Mathematical Clock</span>
+              </button>
+            )}
+
             {/* 1,000-Year PDF Trigger Button */}
             <button
               id="calendar-pdf-download-btn"
@@ -162,7 +201,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               title="Download 1,000-Year Perpetual Master PDF (2030–3030 CE)"
             >
               <FileText className="w-4 h-4 text-slate-950" />
-              <span>Download 1,000-Yr PDF</span>
+              <span>1,000-Yr PDF</span>
             </button>
 
             <button
@@ -278,78 +317,175 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
 
-        {/* Lunar Phases Controls & Ephemeris Schedule Toggle */}
-        <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="font-bold text-slate-700 flex items-center gap-1.5">
-              <Moon className="w-3.5 h-3.5 text-indigo-600" />
-              Moon Phase Highlights:
+        {/* Solar Eclipses & Astrological Events Filter Toolbar */}
+        <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="font-bold text-slate-700 flex items-center gap-1.5 mr-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              Cosmic Filters:
             </span>
 
-            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg">
+            <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl">
               <button
-                id="moon-filter-all"
-                onClick={() => setMoonFilter('all')}
-                className={`px-2 py-1 rounded-md font-medium transition-colors ${
-                  moonFilter === 'all'
-                    ? 'bg-white shadow-xs text-slate-900 font-bold'
+                id="astro-filter-all"
+                onClick={() => setAstroFilter('all')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  astroFilter === 'all'
+                    ? 'bg-white shadow-xs text-slate-900'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 All Days
               </button>
+
+              {/* Solar Eclipses Filter Button */}
               <button
-                id="moon-filter-full"
-                onClick={() => setMoonFilter('full')}
-                className={`px-2 py-1 rounded-md font-medium transition-colors flex items-center gap-1 ${
-                  moonFilter === 'full'
-                    ? 'bg-amber-400 text-slate-950 shadow-xs font-bold'
-                    : 'text-amber-800 hover:text-amber-950'
+                id="astro-filter-solar"
+                onClick={() => setAstroFilter('solar_eclipse')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                  astroFilter === 'solar_eclipse'
+                    ? 'bg-amber-400 text-slate-950 shadow-xs'
+                    : 'text-amber-900 hover:bg-amber-200/50'
                 }`}
-                title={`Highlight all ${fullMoonsCount} Full Moons in Year ${viewYear}`}
+                title={`Highlight all ${solarEclipses.length} Solar Eclipses in Year ${viewYear}`}
+              >
+                <span>☀️🌑</span>
+                <span>Solar Eclipses ({solarEclipses.length})</span>
+              </button>
+
+              {/* Lunar Eclipses Filter Button */}
+              <button
+                id="astro-filter-lunar"
+                onClick={() => setAstroFilter('lunar_eclipse')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                  astroFilter === 'lunar_eclipse'
+                    ? 'bg-red-600 text-white shadow-xs'
+                    : 'text-red-800 hover:bg-red-100/60'
+                }`}
+                title={`Highlight all ${lunarEclipses.length} Lunar Eclipses in Year ${viewYear}`}
+              >
+                <span>🌕🔴</span>
+                <span>Lunar Eclipses ({lunarEclipses.length})</span>
+              </button>
+
+              {/* Solstices & Equinoxes Filter Button */}
+              <button
+                id="astro-filter-cardinal"
+                onClick={() => setAstroFilter('cardinal')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                  astroFilter === 'cardinal'
+                    ? 'bg-emerald-700 text-white shadow-xs'
+                    : 'text-emerald-800 hover:bg-emerald-100/60'
+                }`}
+                title={`Highlight all ${cardinalEvents.length} Solstices & Equinoxes in Year ${viewYear}`}
+              >
+                <span>⚖️</span>
+                <span>Solstices / Equinoxes ({cardinalEvents.length})</span>
+              </button>
+
+              {/* Planetary Retrogrades Filter Button */}
+              <button
+                id="astro-filter-planetary"
+                onClick={() => setAstroFilter('planetary')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                  astroFilter === 'planetary'
+                    ? 'bg-purple-700 text-white shadow-xs'
+                    : 'text-purple-800 hover:bg-purple-100/60'
+                }`}
+                title={`Highlight all ${planetaryStations.length} Planetary Stations in Year ${viewYear}`}
+              >
+                <span>℞</span>
+                <span>Retrogrades ({planetaryStations.length})</span>
+              </button>
+
+              {/* Full Moons */}
+              <button
+                id="astro-filter-full-moon"
+                onClick={() => setAstroFilter('full_moon')}
+                className={`px-2 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                  astroFilter === 'full_moon'
+                    ? 'bg-amber-100 text-amber-950 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
                 <span>🌕</span>
-                <span>Full Moons ({fullMoonsCount})</span>
+                <span>Full ({fullMoonsCount})</span>
               </button>
+
+              {/* New Moons */}
               <button
-                id="moon-filter-new"
-                onClick={() => setMoonFilter('new')}
-                className={`px-2 py-1 rounded-md font-medium transition-colors flex items-center gap-1 ${
-                  moonFilter === 'new'
-                    ? 'bg-indigo-600 text-white shadow-xs font-bold'
-                    : 'text-indigo-800 hover:text-indigo-950'
+                id="astro-filter-new-moon"
+                onClick={() => setAstroFilter('new_moon')}
+                className={`px-2 py-1 rounded-lg font-bold transition-all flex items-center gap-1 ${
+                  astroFilter === 'new_moon'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
-                title={`Highlight all ${newMoonsCount} New Moons in Year ${viewYear}`}
               >
                 <span>🌑</span>
-                <span>New Moons ({newMoonsCount})</span>
+                <span>New ({newMoonsCount})</span>
               </button>
             </div>
           </div>
 
+          {/* Ephemeris Schedule Toggle Button */}
           <button
             id="toggle-ephemeris-btn"
             onClick={() => setShowEphemeris((s) => !s)}
-            className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+            className={`min-h-[38px] px-3.5 py-1.5 rounded-xl font-bold transition-all flex items-center gap-2 ${
               showEphemeris
                 ? 'bg-slate-900 text-white shadow-xs'
                 : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200/60'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>{showEphemeris ? 'Hide Lunar Ephemeris' : `Lunar Ephemeris Schedule (${lunarEvents.length})`}</span>
+            <Sparkles className="w-4 h-4 text-amber-400" />
+            <span>{showEphemeris ? 'Hide Cosmic Ephemeris' : `Cosmic Ephemeris (${astroEvents.length + lunarEvents.length})`}</span>
           </button>
         </div>
       </div>
 
-      {/* Expanded Astronomical Ephemeris Panel */}
+      {/* Expanded Cosmic Ephemeris Panel */}
       {showEphemeris && (
-        <LunarEphemerisPanel
+        <CosmicEphemerisPanel
           year={viewYear}
-          events={lunarEvents}
+          astroEvents={astroEvents}
+          lunarEvents={lunarEvents}
           onSelectDate={onSelectDate}
+          onOpenClock={onOpenClock}
           onClose={() => setShowEphemeris(false)}
         />
+      )}
+
+      {/* Full-Spectrum Astrological Clock Banner */}
+      {onOpenClock && (
+        <div className="bg-linear-to-r from-slate-950 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-indigo-900/60 shadow-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-amber-400/20 text-amber-400 flex items-center justify-center border border-amber-400/30 shrink-0">
+              <Compass className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-base font-bold text-white tracking-tight">
+                  Full-Spectrum Mathematical Clock (Astrological & Astronomical)
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-400 text-slate-950">
+                  Interactive Dial
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Concentric astrolabe with 24h Solar cycle, 13-Month Seshat ring, 360° Zodiac wheel, active aspect beams, and eclipse nodal radar.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onOpenClock()}
+            className="min-h-[44px] px-4 py-2 bg-amber-400 hover:bg-amber-500 active:scale-95 text-slate-950 font-black text-xs rounded-xl transition-all shadow-md flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center"
+          >
+            <span>Launch Mathematical Clock</span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
       )}
 
       {/* 13-Month Grid */}
@@ -426,41 +562,107 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       const isFullMoon = lunarEv?.type === 'full_moon';
                       const isNewMoon = lunarEv?.type === 'new_moon';
 
-                      const isDimmed =
-                        (moonFilter === 'full' && !isFullMoon) ||
-                        (moonFilter === 'new' && !isNewMoon);
+                      const dayAstroList = astroEventsMap.get(isoDate) || [];
+                      const solarEv = dayAstroList.find((e) => e.type === 'solar_eclipse');
+                      const lunarEclipseEv = dayAstroList.find((e) => e.type === 'lunar_eclipse');
+                      const cardinalEv = dayAstroList.find((e) => e.type === 'solstice' || e.type === 'equinox');
+                      const stationEv = dayAstroList.find((e) => e.type === 'planetary_station');
+                      const ingressEv = dayAstroList.find((e) => e.type === 'zodiac_ingress');
+
+                      // Dimming logic based on active filter
+                      let isDimmed = false;
+                      if (astroFilter === 'solar_eclipse') {
+                        isDimmed = !solarEv;
+                      } else if (astroFilter === 'lunar_eclipse') {
+                        isDimmed = !lunarEclipseEv;
+                      } else if (astroFilter === 'cardinal') {
+                        isDimmed = !cardinalEv;
+                      } else if (astroFilter === 'planetary') {
+                        isDimmed = !stationEv;
+                      } else if (astroFilter === 'full_moon') {
+                        isDimmed = !isFullMoon;
+                      } else if (astroFilter === 'new_moon') {
+                        isDimmed = !isNewMoon;
+                      }
+
+                      // Build tooltip
+                      let tooltip = `Month ${month.number} (${month.name}) Day ${dayNum} · ${formatGregorianLong(gregDate)}`;
+                      if (solarEv) {
+                        tooltip += ` · ☀️🌑 ${solarEv.title} (${solarEv.timeStr})`;
+                      }
+                      if (lunarEclipseEv) {
+                        tooltip += ` · 🌕🔴 ${lunarEclipseEv.title} (${lunarEclipseEv.timeStr})`;
+                      } else if (isFullMoon) {
+                        tooltip += ` · 🌕 Full Moon (${lunarEv.name}) at ${lunarEv.timeStr}`;
+                      } else if (isNewMoon) {
+                        tooltip += ` · 🌑 New Moon (${lunarEv.name}) at ${lunarEv.timeStr}`;
+                      }
+                      if (cardinalEv) {
+                        tooltip += ` · ⚖️ ${cardinalEv.title}`;
+                      }
+                      if (stationEv) {
+                        tooltip += ` · ℞ ${stationEv.title}`;
+                      }
+                      if (ingressEv) {
+                        tooltip += ` · ♈ ${ingressEv.title}`;
+                      }
+                      if (dayEvents.length > 0) {
+                        tooltip += ` · ${dayEvents.length} Google Calendar event(s)`;
+                      }
 
                       return (
                         <button
                           key={dayNum}
                           id={`day-btn-${month.number}-${dayNum}`}
                           onClick={() => handleDayClick(month, dayNum)}
-                          className={`py-1.5 rounded-lg text-xs font-semibold transition-all relative flex flex-col items-center justify-center min-h-[42px] sm:min-h-[38px] active:scale-95 touch-manipulation ${
-                            isDimmed ? 'opacity-25 hover:opacity-100' : ''
+                          className={`py-1 rounded-lg text-xs font-semibold transition-all relative flex flex-col items-center justify-center min-h-[44px] sm:min-h-[40px] active:scale-95 touch-manipulation ${
+                            isDimmed ? 'opacity-20 hover:opacity-100' : ''
                           } ${
                             isSelected
                               ? 'bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300'
                               : isToday
                               ? 'bg-emerald-600 text-white font-black shadow-xs ring-2 ring-emerald-300'
+                              : solarEv
+                              ? 'bg-linear-to-b from-amber-200 to-amber-300 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black border-2 border-amber-500 shadow-md ring-2 ring-amber-300/80 animate-pulse'
+                              : lunarEclipseEv
+                              ? 'bg-linear-to-b from-red-100 to-rose-200 hover:from-red-200 hover:to-rose-300 text-red-950 font-black border-2 border-red-500 shadow-md ring-2 ring-red-300/80'
+                              : cardinalEv
+                              ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold border border-emerald-300 shadow-xs'
+                              : stationEv
+                              ? 'bg-purple-50 hover:bg-purple-100 text-purple-950 font-bold border border-purple-300 shadow-xs'
                               : isFullMoon
                               ? 'bg-amber-50 hover:bg-amber-100 text-amber-950 font-bold border border-amber-300 shadow-xs'
                               : isNewMoon
                               ? 'bg-slate-100 hover:bg-slate-200 text-indigo-950 font-bold border border-indigo-200 shadow-xs'
                               : 'hover:bg-slate-200 text-slate-800 bg-white border border-slate-100/80'
                           }`}
-                          title={`Month ${month.number} (${month.name}) Day ${dayNum}${
-                            isFullMoon
-                              ? ` · 🌕 Full Moon (${lunarEv.name}) at ${lunarEv.timeStr}`
-                              : isNewMoon
-                              ? ` · 🌑 New Moon (${lunarEv.name}) at ${lunarEv.timeStr}`
-                              : ''
-                          }${
-                            dayEvents.length > 0 ? ` · ${dayEvents.length} Google event(s)` : ''
-                          }`}
+                          title={tooltip}
                         >
                           <div className="flex items-center gap-0.5 leading-none">
-                            <span>{dayNum}</span>
-                            {isFullMoon && (
+                            <span className={solarEv ? 'font-black' : ''}>{dayNum}</span>
+
+                            {/* Solar Eclipse Icon */}
+                            {solarEv && (
+                              <span
+                                className="text-[10px] leading-none select-none drop-shadow-xs"
+                                aria-label="Solar Eclipse"
+                              >
+                                ☀️🌑
+                              </span>
+                            )}
+
+                            {/* Lunar Eclipse Icon */}
+                            {lunarEclipseEv && !solarEv && (
+                              <span
+                                className="text-[10px] leading-none select-none drop-shadow-xs"
+                                aria-label="Lunar Eclipse"
+                              >
+                                🌕🔴
+                              </span>
+                            )}
+
+                            {/* Standard Full / New Moon if not eclipse */}
+                            {!solarEv && !lunarEclipseEv && isFullMoon && (
                               <span
                                 className="text-[10px] leading-none select-none drop-shadow-xs"
                                 aria-label="Full Moon"
@@ -468,12 +670,31 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 🌕
                               </span>
                             )}
-                            {isNewMoon && (
+                            {!solarEv && !lunarEclipseEv && isNewMoon && (
                               <span
                                 className="text-[10px] leading-none select-none"
                                 aria-label="New Moon"
                               >
                                 🌑
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Secondary Astrological Glyphs (Solstice, Equinox, Retrograde) */}
+                          <div className="flex items-center gap-0.5 mt-0.5">
+                            {cardinalEv && (
+                              <span className="text-[9px] leading-none text-emerald-700 font-bold" title={cardinalEv.title}>
+                                {cardinalEv.type === 'solstice' ? '☀️' : '⚖️'}
+                              </span>
+                            )}
+                            {stationEv && (
+                              <span className="text-[9px] leading-none text-purple-700 font-black" title={stationEv.title}>
+                                ℞
+                              </span>
+                            )}
+                            {ingressEv && (
+                              <span className="text-[9px] leading-none text-indigo-700 font-bold" title={ingressEv.title}>
+                                {ingressEv.icon}
                               </span>
                             )}
                           </div>
@@ -536,9 +757,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         {/* The Intercalaris Days Cards */}
         {(() => {
           const i1Greg = seshatToGregorian(viewYear, 'intercalaris_1');
-          const i1Lunar = lunarEventsMap.get(formatGregorianISO(i1Greg));
+          const i1Iso = formatGregorianISO(i1Greg);
+          const i1Lunar = lunarEventsMap.get(i1Iso);
+          const i1Astro = astroEventsMap.get(i1Iso) || [];
+          const i1SolarEclipse = i1Astro.find((e) => e.type === 'solar_eclipse');
+          const i1LunarEclipse = i1Astro.find((e) => e.type === 'lunar_eclipse');
+
           const i2Greg = seshatToGregorian(viewYear, 'intercalaris_2');
-          const i2Lunar = isLeap ? lunarEventsMap.get(formatGregorianISO(i2Greg)) : null;
+          const i2Iso = formatGregorianISO(i2Greg);
+          const i2Lunar = isLeap ? lunarEventsMap.get(i2Iso) : null;
+          const i2Astro = isLeap ? astroEventsMap.get(i2Iso) || [] : [];
+          const i2SolarEclipse = i2Astro.find((e) => e.type === 'solar_eclipse');
 
           return (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -556,7 +785,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <span className="text-xs font-semibold text-amber-700">
                       {isLeap ? 'First Epagomenal Day' : 'Annual Solar Anchor'}
                     </span>
-                    {i1Lunar && (
+                    {i1SolarEclipse && (
+                      <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-bold text-xs rounded-md flex items-center gap-1 shadow-xs">
+                        <span>☀️🌑</span>
+                        <span>Solar Eclipse</span>
+                      </span>
+                    )}
+                    {i1LunarEclipse && (
+                      <span className="px-2 py-0.5 bg-red-600 text-white font-bold text-xs rounded-md flex items-center gap-1 shadow-xs">
+                        <span>🌕🔴</span>
+                        <span>Lunar Eclipse</span>
+                      </span>
+                    )}
+                    {!i1SolarEclipse && !i1LunarEclipse && i1Lunar && (
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-900 font-bold text-xs rounded-md flex items-center gap-1">
                         <span>{i1Lunar.type === 'full_moon' ? '🌕' : '🌑'}</span>
                         <span>{i1Lunar.type === 'full_moon' ? 'Full Moon' : 'New Moon'}</span>
@@ -598,7 +839,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         Intercalaris 2 (I₂)
                       </span>
                       <span className="text-xs font-semibold text-purple-700">Leap Solar Anchor</span>
-                      {i2Lunar && (
+                      {i2SolarEclipse && (
+                        <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-bold text-xs rounded-md flex items-center gap-1 shadow-xs">
+                          <span>☀️🌑</span>
+                          <span>Solar Eclipse</span>
+                        </span>
+                      )}
+                      {!i2SolarEclipse && i2Lunar && (
                         <span className="px-2 py-0.5 bg-purple-100 text-purple-900 font-bold text-xs rounded-md flex items-center gap-1">
                           <span>{i2Lunar.type === 'full_moon' ? '🌕' : '🌑'}</span>
                           <span>{i2Lunar.type === 'full_moon' ? 'Full Moon' : 'New Moon'}</span>

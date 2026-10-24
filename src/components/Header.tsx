@@ -21,7 +21,9 @@ import {
   Download,
 } from 'lucide-react';
 
-export type ActiveTab = 'calendar' | 'converter' | 'financial' | 'priorArt' | 'roadmap';
+import { calculateSunLongitude, getZodiacSignForLongitude } from '../utils/astronomyMath';
+
+export type ActiveTab = 'calendar' | 'clock' | 'converter' | 'financial' | 'priorArt' | 'roadmap';
 
 interface HeaderProps {
   activeTab: ActiveTab;
@@ -40,9 +42,12 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenPd
 
   const currentSeshat = gregorianToSeshat(currentDate);
   const liveLunar = getLunarDayInfo(currentDate);
+  const liveSunLon = calculateSunLongitude(currentDate);
+  const liveSunZodiac = getZodiacSignForLongitude(liveSunLon);
 
   const navTabs = [
     { id: 'calendar' as ActiveTab, label: '13-Month Calendar', icon: Calendar },
+    { id: 'clock' as ActiveTab, label: 'Mathematical Clock', icon: Compass },
     { id: 'converter' as ActiveTab, label: 'Temporal Converter', icon: ArrowRightLeft },
     { id: 'financial' as ActiveTab, label: 'Financial Variance', icon: TrendingUp },
     { id: 'priorArt' as ActiveTab, label: 'Prior Art & History', icon: History },
@@ -53,15 +58,13 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenPd
     <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
       {/* Top Meta Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
-          <span className="font-semibold text-slate-800">{SESHAT_METADATA.author}</span>
+        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+          <span className="font-bold text-slate-800 tracking-tight">Seshat Calendar Standard</span>
           <span>·</span>
-          <span>{SESHAT_METADATA.titleAndRole}</span>
-          <span>·</span>
-          <span className="font-mono text-slate-400">ORCID: {SESHAT_METADATA.orcid}</span>
+          <span>Universal Chronometry & Google Calendar Synchronization</span>
         </div>
 
-        {/* Live Temporal Coordinates Badge & Lunar Phase & Google Auth Quick Status */}
+        {/* Live Temporal Coordinates Badge & Lunar Phase & Clock */}
         <div className="flex items-center gap-2.5">
           <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-950 border border-amber-200/80 rounded-full text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5 text-amber-600" />
@@ -70,6 +73,18 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange, onOpenPd
               {currentSeshat.type === 'standard'
                 ? `Yr ${currentSeshat.year}, M${currentSeshat.month?.number} (${currentSeshat.month?.name}) D${currentSeshat.day}`
                 : currentSeshat.formattedSeshat}
+            </span>
+          </div>
+
+          {/* Live Astrological Sun Position Badge */}
+          <div
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-amber-100/70 text-amber-950 border border-amber-300 rounded-full text-xs font-semibold"
+            title={`Astrological Sun Ecliptic Longitude: ${liveSunLon.toFixed(2)}° in ${liveSunZodiac.sign} (${liveSunZodiac.element} · ${liveSunZodiac.quality})`}
+          >
+            <span className="text-amber-600 font-bold">☉</span>
+            <span>Sun:</span>
+            <span className="font-mono font-bold text-amber-900">
+              {liveSunZodiac.degrees}°{String(liveSunZodiac.minutes).padStart(2, '0')}' {liveSunZodiac.symbol}
             </span>
           </div>
 
